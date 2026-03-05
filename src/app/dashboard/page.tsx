@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-// ─── Types ───────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface Issue {
   identifier: string;
@@ -30,20 +30,20 @@ interface LinearData {
   blockers: Issue[];
 }
 
-// ─── Agent config ────────────────────────────────────────
+// ─── Agent config ────────────────────────────────────────────────────────────
 
 const AGENTS = [
-  { name: 'Tarek',     codename: 'Forge',     emoji: '🔨' },
-  { name: 'Layla',     codename: 'Canvas',    emoji: '🎨' },
-  { name: 'Anvil',     codename: 'Anvil',     emoji: '⚒️' },
+  { name: 'Tarek',  codename: 'Forge',     emoji: '🔨' },
+  { name: 'Layla',  codename: 'Canvas',    emoji: '🎨' },
+  { name: 'Anvil',  codename: 'Anvil',     emoji: '⚒️' },
   { name: 'Blueprint', codename: 'Blueprint', emoji: '📐' },
-  { name: 'Quill',     codename: 'Quill',     emoji: '✍️' },
-  { name: 'Spark',     codename: 'Spark',     emoji: '⚡' },
-  { name: 'Nadia',     codename: 'Radar',     emoji: '📡' },
-  { name: 'Rami',      codename: 'Abacus',    emoji: '🧮' },
+  { name: 'Quill',  codename: 'Quill',     emoji: '✍️' },
+  { name: 'Spark',  codename: 'Spark',     emoji: '⚡' },
+  { name: 'Nadia',  codename: 'Radar',     emoji: '📡' },
+  { name: 'Rami',   codename: 'Abacus',    emoji: '🧮' },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -52,51 +52,107 @@ function timeAgo(date: string) {
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function priorityColor(p: number) {
-  if (p === 1) return 'bg-red-500';
-  if (p === 2) return 'bg-orange-500';
-  if (p === 3) return 'bg-yellow-500';
-  if (p === 4) return 'bg-blue-500';
-  return 'bg-gray-600';
+function priorityBadge(p: number) {
+  if (p === 1) return { bg: 'bg-red-500/20',    text: 'text-red-400',    dot: 'bg-red-500',    label: 'Urgent' };
+  if (p === 2) return { bg: 'bg-orange-500/20', text: 'text-orange-400', dot: 'bg-orange-500', label: 'High' };
+  if (p === 3) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', dot: 'bg-yellow-500', label: 'Medium' };
+  if (p === 4) return { bg: 'bg-blue-500/20',   text: 'text-blue-400',   dot: 'bg-blue-400',   label: 'Low' };
+  return         { bg: 'bg-gray-700/40',         text: 'text-gray-500',   dot: 'bg-gray-600',   label: '' };
 }
 
-// ─── Components ──────────────────────────────────────────
+// ─── Section header ──────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
+function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">{label}</p>
-      <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-1 h-4 rounded-full bg-[#2563EB]" />
+      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+        {children}
+      </h2>
     </div>
   );
 }
 
-function TaskCard({ issue }: { issue: Issue }) {
+// ─── KPI card ────────────────────────────────────────────────────────────────
+
+function KpiCard({
+  label,
+  value,
+  accent,
+  icon,
+}: {
+  label: string;
+  value: number;
+  accent: string;
+  icon: string;
+}) {
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3 hover:border-gray-600 transition-colors">
-      <div className="flex items-start gap-2">
-        <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${priorityColor(issue.priority)}`} />
+    <div
+      className="
+        relative overflow-hidden
+        bg-[#0a0f1e] border border-gray-800/60 rounded-2xl p-5
+        hover:border-gray-700 transition-all duration-300
+        hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/30
+        animate-fade-in-up
+      "
+    >
+      {/* Top accent line */}
+      <div className={`absolute top-0 left-0 right-0 h-px ${accent}`} />
+
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mb-2">
+            {label}
+          </p>
+          <p className={`text-4xl font-bold tabular-nums ${accent.replace('bg-', 'text-').replace('/60', '').replace('/20', '')}`}>
+            {value}
+          </p>
+        </div>
+        <span className="text-2xl opacity-40">{icon}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Task card ───────────────────────────────────────────────────────────────
+
+function TaskCard({ issue }: { issue: Issue }) {
+  const pri = priorityBadge(issue.priority);
+  return (
+    <div
+      className="
+        group bg-[#0a0f1e]/80 border border-gray-800/50 rounded-xl p-3
+        hover:border-[rgba(37,99,235,0.35)] hover:bg-[#0a0f1e]
+        transition-all duration-200 cursor-default
+      "
+    >
+      <div className="flex items-start gap-2.5">
+        <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${pri.dot}`} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-100 font-medium leading-snug">{issue.title}</p>
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          <p className="text-[13px] text-gray-200 font-medium leading-snug group-hover:text-white transition-colors">
+            {issue.title}
+          </p>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             {issue.assignee && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-700 text-[10px] font-bold text-gray-300">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#2563EB]/20 border border-[rgba(37,99,235,0.3)] text-[10px] font-bold text-blue-300">
                 {initials(issue.assignee.name)}
               </span>
             )}
             {issue.project && (
-              <span className="text-[11px] bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full border border-gray-700/50">
                 {issue.project.name}
               </span>
             )}
+            <span className="text-[10px] text-gray-600 ml-auto">
+              {timeAgo(issue.updatedAt)}
+            </span>
           </div>
         </div>
       </div>
@@ -104,52 +160,118 @@ function TaskCard({ issue }: { issue: Issue }) {
   );
 }
 
-function BoardColumn({ title, issues, color }: { title: string; issues: Issue[]; color: string }) {
+// ─── Board column ────────────────────────────────────────────────────────────
+
+function BoardColumn({
+  title,
+  issues,
+  accentClass,
+}: {
+  title: string;
+  issues: Issue[];
+  accentClass: string;
+}) {
   return (
-    <div className="flex-1 min-w-[220px]">
-      <div className="flex items-center gap-2 mb-3">
-        <span className={`w-3 h-3 rounded-full ${color}`} />
-        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">{title}</h3>
-        <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full ml-auto">
+    <div className="flex-1 min-w-[200px] animate-fade-in-up">
+      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-800/60">
+        <span className={`w-2.5 h-2.5 rounded-full ${accentClass}`} />
+        <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
+          {title}
+        </h3>
+        <span className="ml-auto text-[11px] font-semibold bg-gray-800/80 text-gray-500 px-2 py-0.5 rounded-full border border-gray-700/50">
           {issues.length}
         </span>
       </div>
-      <div className="space-y-2 max-h-[420px] overflow-y-auto">
-        {issues.length === 0 && (
-          <p className="text-gray-600 text-sm text-center py-8">No tasks</p>
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-0.5">
+        {issues.length === 0 ? (
+          <p className="text-gray-700 text-sm text-center py-10">—</p>
+        ) : (
+          issues.map((issue) => (
+            <TaskCard key={issue.identifier} issue={issue} />
+          ))
         )}
-        {issues.map((issue) => (
-          <TaskCard key={issue.identifier} issue={issue} />
-        ))}
       </div>
     </div>
   );
 }
 
-function AgentCard({ agent, issues }: { agent: typeof AGENTS[number]; issues: Issue[] }) {
-  const task = issues.find(
+// ─── Agent card ──────────────────────────────────────────────────────────────
+
+type AgentStatus = 'active' | 'idle' | 'blocked';
+
+function AgentCard({
+  agent,
+  issues,
+}: {
+  agent: typeof AGENTS[number];
+  issues: Issue[];
+}) {
+  const activeTask = issues.find(
     (i) =>
       i.assignee?.name.toLowerCase() === agent.name.toLowerCase() &&
-      i.state.type === 'started'
+      i.state.type === 'started',
   );
-  const hasTask = !!task;
+  const blockedTask = issues.find(
+    (i) =>
+      i.assignee?.name.toLowerCase() === agent.name.toLowerCase() &&
+      i.priority === 1 &&
+      i.state.type !== 'completed',
+  );
+
+  const status: AgentStatus = activeTask ? 'active' : blockedTask ? 'blocked' : 'idle';
+
+  const statusConfig = {
+    active:  { dot: 'bg-green-500',  label: 'Active',  text: 'text-green-400',  pulse: true },
+    idle:    { dot: 'bg-gray-600',   label: 'Idle',    text: 'text-gray-500',   pulse: false },
+    blocked: { dot: 'bg-red-500',    label: 'Blocked', text: 'text-red-400',    pulse: false },
+  }[status];
+
+  const currentTask = activeTask || blockedTask;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+    <div
+      className={`
+        relative bg-[#0a0f1e] border rounded-2xl p-4
+        transition-all duration-300
+        hover:translate-y-[-2px] hover:shadow-lg hover:shadow-black/30
+        animate-fade-in-up
+        ${status === 'active'
+          ? 'border-[rgba(37,99,235,0.3)] hover:border-[rgba(37,99,235,0.5)]'
+          : status === 'blocked'
+          ? 'border-red-900/40 hover:border-red-800/60'
+          : 'border-gray-800/60 hover:border-gray-700'
+        }
+      `}
+    >
       <div className="flex items-start gap-3">
-        <span className="text-2xl">{agent.emoji}</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-gray-100 font-semibold">{agent.codename}</p>
-            <span className={`w-2 h-2 rounded-full ${hasTask ? 'bg-green-500' : 'bg-gray-600'}`} />
+        <div className="relative shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-xl border border-gray-700/50">
+            {agent.emoji}
           </div>
-          {task ? (
+          {/* Status dot */}
+          <span className="absolute -bottom-0.5 -right-0.5">
+            <span className={`status-dot ${status === 'active' ? 'active' : ''}`}>
+              <span className={`block w-3 h-3 rounded-full border-2 border-[#0a0f1e] ${statusConfig.dot}`} />
+            </span>
+          </span>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-1">
+            <p className="text-[14px] font-semibold text-gray-100">{agent.codename}</p>
+            <span className={`text-[10px] font-semibold uppercase tracking-wide ${statusConfig.text}`}>
+              {statusConfig.label}
+            </span>
+          </div>
+          {currentTask ? (
             <>
-              <p className="text-gray-400 text-xs mt-1 truncate">{task.title}</p>
-              <p className="text-gray-600 text-[11px] mt-0.5">{timeAgo(task.updatedAt)}</p>
+              <p className="text-[12px] text-gray-400 mt-1 leading-snug line-clamp-2">
+                {currentTask.title}
+              </p>
+              <p className="text-[11px] text-gray-600 mt-1">{timeAgo(currentTask.updatedAt)}</p>
             </>
           ) : (
-            <p className="text-gray-600 text-xs mt-1">Idle</p>
+            <p className="text-[12px] text-gray-600 mt-1">No active task</p>
           )}
         </div>
       </div>
@@ -157,38 +279,49 @@ function AgentCard({ agent, issues }: { agent: typeof AGENTS[number]; issues: Is
   );
 }
 
+// ─── Commit row ──────────────────────────────────────────────────────────────
+
 function CommitRow({ commit }: { commit: Commit }) {
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-gray-800/50 last:border-0 text-sm">
-      <code className="text-xs text-blue-400 font-mono bg-blue-500/10 px-2 py-0.5 rounded shrink-0">
+    <div className="group flex items-center gap-3 py-3 border-b border-gray-800/40 last:border-0">
+      <code className="text-[11px] text-[#3B82F6] font-mono bg-[rgba(37,99,235,0.1)] border border-[rgba(37,99,235,0.2)] px-2 py-0.5 rounded-lg shrink-0 group-hover:bg-[rgba(37,99,235,0.18)] transition-colors">
         {commit.sha}
       </code>
-      <p className="text-gray-300 flex-1 truncate">{commit.message}</p>
-      <span className="text-gray-600 text-xs shrink-0 hidden sm:inline">
+      <p className="text-[13px] text-gray-400 flex-1 truncate group-hover:text-gray-300 transition-colors">
+        {commit.message}
+      </p>
+      <span className="text-[11px] text-gray-600 shrink-0 hidden sm:inline font-medium">
         {commit.author}
       </span>
-      <span className="text-gray-500 text-xs shrink-0 hidden sm:inline">&middot;</span>
-      <span className="text-gray-500 text-xs shrink-0">{timeAgo(commit.date)}</span>
+      <span className="text-gray-700 shrink-0 hidden sm:inline">·</span>
+      <span className="text-[11px] text-gray-600 shrink-0 whitespace-nowrap">
+        {timeAgo(commit.date)}
+      </span>
     </div>
   );
 }
 
+// ─── Blocker card ────────────────────────────────────────────────────────────
+
 function BlockerCard({ issue }: { issue: Issue }) {
   return (
-    <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-3">
-      <div className="flex items-start gap-2">
-        <span className="mt-1 w-2 h-2 rounded-full bg-red-500 shrink-0" />
+    <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4 hover:border-red-800/60 transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="w-7 h-7 rounded-lg bg-red-900/40 border border-red-800/40 flex items-center justify-center shrink-0 mt-0.5">
+          <span className="text-red-400 text-sm">⚠</span>
+        </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-red-300 font-medium">{issue.title}</p>
-          <div className="flex items-center gap-2 mt-1">
+          <p className="text-[13px] text-red-300 font-semibold leading-snug">{issue.title}</p>
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {issue.assignee && (
-              <span className="text-xs text-red-400/70">{issue.assignee.name}</span>
+              <span className="text-[11px] text-red-400/60 font-medium">{issue.assignee.name}</span>
             )}
             {issue.project && (
-              <span className="text-[11px] bg-red-900/30 text-red-400/70 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] bg-red-900/30 border border-red-800/30 text-red-400/60 px-2 py-0.5 rounded-full">
                 {issue.project.name}
               </span>
             )}
+            <span className="text-[11px] text-red-500/40 ml-auto">{timeAgo(issue.updatedAt)}</span>
           </div>
         </div>
       </div>
@@ -196,7 +329,44 @@ function BlockerCard({ issue }: { issue: Issue }) {
   );
 }
 
-// ─── Dashboard ───────────────────────────────────────────
+// ─── Skeleton loader ─────────────────────────────────────────────────────────
+
+function SkeletonCard({ className = '' }: { className?: string }) {
+  return <div className={`skeleton ${className}`} />;
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* KPI skeletons */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <SkeletonCard key={i} className="h-24 rounded-2xl" />
+        ))}
+      </div>
+      {/* Board skeleton */}
+      <div>
+        <SkeletonCard className="h-4 w-24 mb-4 rounded" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={i} className="h-64 rounded-xl" />
+          ))}
+        </div>
+      </div>
+      {/* Agent skeletons */}
+      <div>
+        <SkeletonCard className="h-4 w-28 mb-4 rounded" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(8)].map((_, i) => (
+            <SkeletonCard key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dashboard page ──────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -205,6 +375,7 @@ export default function DashboardPage() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('ops_authed') !== 'true') {
@@ -212,7 +383,9 @@ export default function DashboardPage() {
     }
   }, [router]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const [linearRes, githubRes] = await Promise.all([
         fetch('/api/linear'),
@@ -227,6 +400,7 @@ export default function DashboardPage() {
       console.error('Fetch error:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -236,47 +410,65 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    const id = setInterval(() => fetchData(true), 30000);
+    return () => clearInterval(id);
   }, [autoRefresh, fetchData]);
 
   const allIssues = linear
-    ? [
-        ...linear.board.backlog,
-        ...linear.board.inProgress,
-        ...linear.board.review,
-        ...linear.board.done,
-      ]
+    ? [...linear.board.backlog, ...linear.board.inProgress, ...linear.board.review, ...linear.board.done]
     : [];
 
+  const blockedCount = linear?.kpis.blocked ?? 0;
+
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🐟</span>
-            <h1 className="text-xl font-bold">Mantaray Ops</h1>
+    <div className="min-h-screen bg-[#030712] text-gray-100">
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-50 bg-[#030712]/90 backdrop-blur-xl border-b border-gray-800/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-base shadow-lg shadow-blue-900/40">
+              🐟
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-[13px] font-bold text-white tracking-tight">Mantaray</span>
+              <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase">Ops</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Center — refresh indicator */}
+          <div className="flex-1 flex justify-center">
+            {refreshing && (
+              <div className="flex items-center gap-2 text-[11px] text-gray-500 animate-fade-in">
+                <div className="w-3 h-3 border border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+                Refreshing…
+              </div>
+            )}
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2 shrink-0">
             {lastRefresh && (
-              <span className="text-xs text-gray-500 hidden sm:inline">
-                Last refresh: {lastRefresh.toLocaleTimeString()}
+              <span className="text-[11px] text-gray-600 hidden md:inline">
+                {lastRefresh.toLocaleTimeString()}
               </span>
             )}
             <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                autoRefresh
-                  ? 'bg-green-900/30 text-green-400 border border-green-800/50'
-                  : 'bg-gray-800 text-gray-400 border border-gray-700'
-              }`}
+              onClick={() => setAutoRefresh((a) => !a)}
+              className={`
+                text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all duration-200
+                ${autoRefresh
+                  ? 'bg-[rgba(37,99,235,0.15)] text-blue-400 border-[rgba(37,99,235,0.35)] hover:bg-[rgba(37,99,235,0.22)]'
+                  : 'bg-gray-900 text-gray-500 border-gray-800 hover:border-gray-700'
+                }
+              `}
             >
-              Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}
+              Auto {autoRefresh ? 'ON' : 'OFF'}
             </button>
             <button
-              onClick={fetchData}
-              className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg border border-gray-700 transition-colors"
+              onClick={() => fetchData(true)}
+              className="w-8 h-8 rounded-lg bg-gray-900 border border-gray-800 hover:border-gray-700 hover:bg-gray-800 text-gray-400 hover:text-gray-200 transition-all duration-200 flex items-center justify-center text-sm"
             >
               ↻
             </button>
@@ -284,46 +476,43 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+      {/* ── Main ── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
         {loading ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <LoadingSkeleton />
         ) : (
           <>
-            {/* KPI Row */}
-            <section>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <KpiCard label="Active Tasks" value={linear?.kpis.active ?? 0} color="text-blue-400" />
-                <KpiCard label="In Review" value={linear?.kpis.review ?? 0} color="text-yellow-400" />
-                <KpiCard label="Done This Week" value={linear?.kpis.doneThisWeek ?? 0} color="text-green-400" />
+            {/* KPIs */}
+            <section className="animate-fade-in-up section-delay-0">
+              <SectionHeader>Sprint Overview</SectionHeader>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+                <KpiCard label="Active"        value={linear?.kpis.active ?? 0}       accent="bg-[#2563EB]/60" icon="⚡" />
+                <KpiCard label="In Review"     value={linear?.kpis.review ?? 0}       accent="bg-yellow-500/60" icon="👁" />
+                <KpiCard label="Done This Week" value={linear?.kpis.doneThisWeek ?? 0} accent="bg-green-500/60"  icon="✓" />
                 <KpiCard
                   label="Blockers"
-                  value={linear?.kpis.blocked ?? 0}
-                  color={(linear?.kpis.blocked ?? 0) > 0 ? 'text-red-400' : 'text-gray-600'}
+                  value={blockedCount}
+                  accent={blockedCount > 0 ? 'bg-red-500/60' : 'bg-gray-700/60'}
+                  icon="⚠"
                 />
               </div>
             </section>
 
             {/* Task Board */}
-            <section>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Task Board
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <BoardColumn title="Backlog" issues={linear?.board.backlog ?? []} color="bg-gray-600" />
-                <BoardColumn title="In Progress" issues={linear?.board.inProgress ?? []} color="bg-blue-500" />
-                <BoardColumn title="Review" issues={linear?.board.review ?? []} color="bg-yellow-500" />
-                <BoardColumn title="Done" issues={linear?.board.done ?? []} color="bg-green-500" />
+            <section className="animate-fade-in-up section-delay-1">
+              <SectionHeader>Task Board</SectionHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 stagger">
+                <BoardColumn title="Backlog"     issues={linear?.board.backlog ?? []}     accentClass="bg-gray-600" />
+                <BoardColumn title="In Progress" issues={linear?.board.inProgress ?? []}  accentClass="bg-[#2563EB]" />
+                <BoardColumn title="Review"      issues={linear?.board.review ?? []}      accentClass="bg-yellow-500" />
+                <BoardColumn title="Done"        issues={linear?.board.done ?? []}        accentClass="bg-green-500" />
               </div>
             </section>
 
-            {/* Agent Status Grid */}
-            <section>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Agent Status
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Agent Status */}
+            <section className="animate-fade-in-up section-delay-2">
+              <SectionHeader>Agent Status</SectionHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger">
                 {AGENTS.map((agent) => (
                   <AgentCard key={agent.codename} agent={agent} issues={allIssues} />
                 ))}
@@ -331,33 +520,30 @@ export default function DashboardPage() {
             </section>
 
             {/* Recent Commits */}
-            <section>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Recent Commits
-              </h2>
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <section className="animate-fade-in-up section-delay-3">
+              <SectionHeader>Recent Commits</SectionHeader>
+              <div className="bg-[#0a0f1e] border border-gray-800/60 rounded-2xl px-5 py-1">
                 {commits.length > 0 ? (
                   commits.map((c, i) => <CommitRow key={`${c.sha}-${i}`} commit={c} />)
                 ) : (
-                  <p className="text-gray-600 text-sm text-center py-6">No recent commits</p>
+                  <p className="text-gray-700 text-sm text-center py-8">No recent commits</p>
                 )}
               </div>
             </section>
 
             {/* Blockers */}
-            <section>
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Blockers
-              </h2>
-              {(linear?.blockers?.length ?? 0) > 0 ? (
+            <section className="animate-fade-in-up section-delay-4">
+              <SectionHeader>Blockers</SectionHeader>
+              {blockedCount > 0 ? (
                 <div className="space-y-2">
                   {linear!.blockers.map((issue) => (
                     <BlockerCard key={issue.identifier} issue={issue} />
                   ))}
                 </div>
               ) : (
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
-                  <p className="text-gray-400">✅ No blockers</p>
+                <div className="bg-[#0a0f1e] border border-gray-800/60 rounded-2xl p-6 flex items-center justify-center gap-2">
+                  <span className="text-green-400 text-lg">✓</span>
+                  <p className="text-gray-500 text-sm font-medium">No blockers — clear to ship</p>
                 </div>
               )}
             </section>
