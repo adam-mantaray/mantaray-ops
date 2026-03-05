@@ -8,7 +8,7 @@ async function linearQuery(query: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${LINEAR_API_KEY}`,
+      Authorization: LINEAR_API_KEY,
     },
     body: JSON.stringify({ query }),
     next: { revalidate: 30 },
@@ -60,8 +60,8 @@ export async function GET() {
     ).length;
     const blocked = issues.filter(
       (i: any) =>
-        i.priority === 1 ||
-        i.labels?.nodes?.some((l: any) => l.name.toLowerCase().includes('block'))
+        i.labels?.nodes?.some((l: any) => l.name.toLowerCase().includes('block')) ||
+        (i.priority === 1 && i.state.type !== 'completed')
     );
 
     return NextResponse.json({
